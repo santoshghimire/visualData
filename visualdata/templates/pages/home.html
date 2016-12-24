@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="page-header">
+	<h1 class="page-header" style="margin-top: 40px;">Unique users</h1>
+</div>
+<div class="row" style="margin-top: 40px;margin-bottom: 40px;">
+	<div class="col-sm-12">
+		<ul class="list-group" id="users_list">
+		</ul>
+	</div>
+</div>
+{% endblock content %}
+
+{% block javascript %}
+	<script src="{% static 'js/project.js' %}"></script>
+{% endblock javascript %}

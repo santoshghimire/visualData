@@ -1,0 +1,5 @@
+[run]
+include = visualdata/*
+omit = *migrations*, *tests*
+plugins =
+    django_coverage_plugin

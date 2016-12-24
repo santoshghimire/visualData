@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block css %}
+  {{block.super}}
+  <link href="{% static 'css/jqcloud.min.css' %}" rel="stylesheet">
+{% endblock css %}
+
+{% block javascript %}
+    {{block.super}}
+    <script type="text/javascript">
+        user = "{{user}}";
+    </script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="{% static 'js/word_tree.js' %}"></script>
+    <script src="{% static 'js/word_cloud.js' %}"></script>
+    <script src="{% static 'js/jqcloud.js' %}"></script>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+	<h1 class="page-header" style="margin-top: 40px;">Visualization for user @{{user}}<br>
+    <span class="tag tag-default">{{tweet_count}} tweets</span></h1>
+</div>
+<div class="row" style="margin-top: 40px;">
+    <div class="col-sm-12">
+    	<div id="wordtree_basic" style="width: 900px; height: 500px;"></div>
+    </div>
+    <div class="col-sm-12">
+    	<div id="keywords"></div>
+    </div>
+</div>
+{% endblock content %}
