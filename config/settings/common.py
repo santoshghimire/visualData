@@ -101,17 +101,7 @@ MANAGERS = ADMINS
 # ------------------------------------------------------------------------------
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#databases
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'visualdata',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
-        'PORT': '3306',
-    },
-    'options': {
-        'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-    }
+    'default': env.db('DATABASE_URL', default='postgres:///visualdata'),
 }
 
 # GENERAL CONFIGURATION
