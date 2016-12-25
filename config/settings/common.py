@@ -17,7 +17,7 @@ APPS_DIR = ROOT_DIR.path('visualdata')
 
 env = environ.Env()
 env.read_env()
-
+ALLOWED_HOSTS = ['*']
 # APP CONFIGURATION
 # ------------------------------------------------------------------------------
 DJANGO_APPS = (
