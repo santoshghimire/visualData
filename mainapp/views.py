@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from django.views.generic import TemplateView
 import rake
 
+import environ
+
 
 class VisualizationView(TemplateView):
     """Visualization view of a user."""
@@ -12,8 +14,10 @@ class VisualizationView(TemplateView):
     template_name = 'visualization.html'
 
     def get_context_data(self, **kwargs):
+        root_dir = environ.Path(__file__) - 2
+        file_path = str(root_dir.path('data.csv'))
         username = self.kwargs.get('username')
-        data = pd.read_csv('data.csv')
+        data = pd.read_csv(file_path)
         grouped = data.groupby('username', as_index=False)['message_text'].count()
         data_count = grouped[grouped.username == username].message_text
         return {
@@ -26,7 +30,9 @@ class UniqueUsersAPI(APIView):
     """ Api to get data unique users from csv."""
 
     def get(self, request, *args, **kwargs):
-        data = pd.read_csv('data.csv')
+        root_dir = environ.Path(__file__) - 2
+        file_path = str(root_dir.path('data.csv'))
+        data = pd.read_csv(file_path)
         grouped = data.groupby('username')['message_text'].count()
         users = grouped.index.get_level_values('username')
         return Response(list(users))
@@ -39,7 +45,11 @@ class WordCloudAPI(APIView):
         messages = get_user_msg(username)
         cleaned_text = '. '.join(messages)
 
-        rake_object = rake.Rake("SmartStoplist.txt", 3, 3, 1)
+        root_dir = environ.Path(__file__) - 2
+        file_path = str(root_dir.path('SmartStoplist.txt'))
+        data = pd.read_csv(file_path)
+
+        rake_object = rake.Rake(file_path, 3, 3, 1)
         keywords = rake_object.run(cleaned_text)
         data = [{'text': i[0], 'weight': i[1]} for i in keywords[:100]]
         # data = [
@@ -59,7 +69,6 @@ class WordTreeAPI(APIView):
 
     def get(self, request, username, *args, **kwargs):
         messages = get_user_msg(username)
-        print(messages)
         msgs = [[i] for i in messages[:2]]
         data = [['Phrases']]
         data.extend(msgs)
@@ -88,10 +97,13 @@ class WordTreeAPI(APIView):
 
 
 def get_user_msg(username):
-    data = pd.read_csv('data.csv')
-    user_data = data[data.username == username].message_text
-    user_data['msg_cleaned'] = user_data.apply(clean_text)
-    return list(user_data.msg_cleaned)
+    root_dir = environ.Path(__file__) - 2
+    file_path = str(root_dir.path('data.csv'))
+    data = pd.read_csv(file_path)
+    user_data = data[data.username == username]
+    user_data = user_data.message_text
+    user_data = user_data.apply(clean_text)
+    return list(user_data)
 
 
 def clean_text(text):
