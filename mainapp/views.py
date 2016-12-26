@@ -4,8 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
 import rake
-
 import environ
+
+# from .tfidf import get_nltk_keywords
 
 
 class VisualizationView(TemplateView):
@@ -38,72 +39,51 @@ class UniqueUsersAPI(APIView):
         return Response(list(users))
 
 
-class WordCloudAPI(APIView):
+class WordAPI(APIView):
     """ Api to get data from csv."""
 
     def get(self, request, username, *args, **kwargs):
-        messages = get_user_msg(username)
-        cleaned_text = '. '.join(messages)
+        messages = get_user_msg(username=username)
+        # data for word tree
+        msgs = [[i] for i in messages[:5]]
+        tree_data = [['Phrases']]
+        tree_data.extend(msgs)
 
+        # data for word cloud
         root_dir = environ.Path(__file__) - 2
-        file_path = str(root_dir.path('SmartStoplist.txt'))
-        data = pd.read_csv(file_path)
-
-        rake_object = rake.Rake(file_path, 3, 3, 1)
-        keywords = rake_object.run(cleaned_text)
-        data = [{'text': i[0], 'weight': i[1]} for i in keywords[:100]]
-        # data = [
-        #     {'text': "Lorem", 'weight': 13},
-        #     {'text': "Ipsum", 'weight': 10.5},
-        #     {'text': "Dolor", 'weight': 9.4},
-        #     {'text': "Sit Down", 'weight': 8},
-        #     {'text': "Amet", 'weight': 6.2},
-        #     {'text': "Consectetur", 'weight': 5},
-        #     {'text': "Adipiscing", 'weight': 5},
-        # ]
+        stopwords_file = str(root_dir.path('SmartStoplist.txt'))
+        cloud_data = get_rake_keywords(stopwords_file, messages)
+        # data = get_nltk_keywords(messages)
+        data = {'word_tree': tree_data, 'word_cloud': cloud_data}
         return Response(data)
 
 
-class WordTreeAPI(APIView):
-    """ Api to get data from csv."""
-
-    def get(self, request, username, *args, **kwargs):
-        messages = get_user_msg(username)
-        msgs = [[i] for i in messages[:2]]
-        data = [['Phrases']]
-        data.extend(msgs)
-        # data = [
-        #     ['Phrases'],
-        #     ['cats are better than dogs'],
-        #     ['cats eat kibble'],
-        #     ['cats are better than hamsters'],
-        #     ['cats are awesome'],
-        #     ['cats are people too'],
-        #     ['cats eat mice'],
-        #     ['cats meowing'],
-        #     ['cats in the cradle'],
-        #     ['cats eat mice'],
-        #     ['cats in the cradle lyrics'],
-        #     ['cats eat kibble'],
-        #     ['cats for adoption'],
-        #     ['cats are family'],
-        #     ['cats eat mice'],
-        #     ['cats are better than kittens'],
-        #     ['cats are evil'],
-        #     ['cats are weird'],
-        #     ['cats eat mice'],
-        # ]
-        return Response(data)
-
-
-def get_user_msg(username):
+def get_user_msg(username, remove_stopword=False):
     root_dir = environ.Path(__file__) - 2
     file_path = str(root_dir.path('data.csv'))
     data = pd.read_csv(file_path)
     user_data = data[data.username == username]
     user_data = user_data.message_text
     user_data = user_data.apply(clean_text)
+    if remove_stopword:
+        # remove stop words
+        root_dir = environ.Path(__file__) - 2
+        stopwords_file = str(root_dir.path('SmartStoplist.txt'))
+        f = open(stopwords_file)
+        stop_words = [x.strip() for x in f.readlines()]
+        # user_data.apply(remove_stopwords, args=(stop_words,))
+        user_data = user_data.apply(
+            lambda x: ' '.join([item for item in x if item.lower() not in stop_words]))
+        print(user_data)
     return list(user_data)
+
+
+def remove_stopwords(text, stop_words):
+    word_list = text.split()
+    for word in word_list:
+        if word.lower() in stop_words:
+            text = text.replace(word, '')
+    return text
 
 
 def clean_text(text):
@@ -112,8 +92,20 @@ def clean_text(text):
         'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
         '', text).strip()
     text = re.sub(
-        '(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9_]+)',
+        '(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z0-9]+[A-Za-z0-9_]+)',
         '', text).strip()
     for char in special_chars:
         text = text.replace(char, '').strip()
+    try:
+        text = text.decode('utf-8')
+    except:
+        print('exception in decoding')
     return text
+
+
+def get_rake_keywords(stopwords_file, messages, limit=100):
+    cleaned_text = '. '.join(messages)
+    rake_object = rake.Rake(stopwords_file, 3, 2, 1)
+    keywords = rake_object.run(cleaned_text)
+    data = [{'text': i[0], 'weight': i[1]} for i in keywords]
+    return data
