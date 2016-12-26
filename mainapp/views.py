@@ -45,7 +45,7 @@ class WordAPI(APIView):
     def get(self, request, username, *args, **kwargs):
         messages = get_user_msg(username=username)
         # data for word tree
-        msgs = [[i] for i in messages[:5]]
+        msgs = [[i] for i in messages[:2]]
         tree_data = [['Phrases']]
         tree_data.extend(msgs)
 
